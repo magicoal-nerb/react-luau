@@ -1,20 +1,18 @@
 --!strict
 
 --[[
-	useMemo.lua
+	useCallback.lua
 	* this saves us from having to precalculate a buncha stuff
 	* It checks the dependencies for us :3
 	
 	usage:
 	```lua
 	return function(props)
-		local state, setState = useState<number>(32)
-		
-		local data = useCallback(function()
-			-- Basically, this function changes if state
-			-- changes.
-			return state * 8
-		end, { state })
+		local result = useCallback(function()
+			-- this function changes when props.something
+			-- changes
+			return props.something * 10
+		end, props.something)
 		
 		-- incomplete implementation
 		return ...

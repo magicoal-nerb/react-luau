@@ -10,7 +10,7 @@
 	-- the function gets called when the element
 	-- gets created
 	return function()
-		useEffect(function()
+		useLayoutEffect(function()
 			print("Hi guys i got mounted!! :D")
 		end)
 		
@@ -24,7 +24,7 @@
 	-- changes
 	return function()
 		local counter, setCounter = useState(0)
-		useEffect(function()
+		useLayoutEffect(function()
 			-- This gets called if counter is different
 			print(`Counter value is: {counter}`)
 		end, counter)

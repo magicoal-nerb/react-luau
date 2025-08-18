@@ -2,19 +2,30 @@
 
 --[[
 	useAnimatedValue.lua
-	* references are kinda like useState but they dont
-	* redraw the element
+	* used for tweens and stuff.
 	
 	usage:
 	```lua
+	local Animated = React.Animated
+
 	return function(props)
-		local ref = useRef(32)
+		local opacity = useAnimatedValue(0)
 		
-		ref:set(64) -- sets ref to 64
-		ref:get() -- will return 64
-		
-		-- incomplete implementation
-		return ...
+		local function activated()
+			Animated.timing(opacity, {
+				toValue = opacity:get() > 0.5 and 0.0 or 1.0,
+				easing = React.easings.exponentialIn,
+				duration = 1.0,
+			}):start()
+		end
+
+		return {
+			hi = React.createElement("TextButton", {
+				BackgroundTransparency = opacity,
+
+				[React.event.Activated] = activated,
+			})
+		}
 	end
 	```
 ]]
