@@ -61,7 +61,15 @@ return {
 	useRef = require("@self/hooks/useRef"),
 
 	-- Functions
-	enqueueElement = function(element: Element) return React:enqueueElement(element) end,
-	mount = function(element: Element, parent: Instance) return React:mount(element, parent) end,
-	unmount = function(element: Element) return React:unmount(element) end,
+	enqueueElement = function(element: Element)
+		return React:enqueueElement(element)
+	end,
+
+	mount = function(element: Element, parent: Instance)
+		return React:mount(element, parent)
+	end,
+	
+	unmount = function(element: Element)
+		return React:unmount(element)
+	end,
 }
