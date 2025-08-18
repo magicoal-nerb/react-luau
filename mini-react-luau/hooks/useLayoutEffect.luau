@@ -61,7 +61,7 @@ return function(
 			-- Use the callback
 			new.hooks[id] = React:getHookDependencies(...)
 			callback()
-		elseif bit32.btest(bit32.rshift(new.flags, 8), new.hooks[id]) then
+		elseif React:didDependenciesChange(new.hooks[id], ...) then
 			-- Callback because deps changed
 			callback()
 		end
