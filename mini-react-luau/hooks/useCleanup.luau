@@ -31,19 +31,8 @@ return function(callback: () -> ())
 		return
 	end
 	
-	local function destroyed()
-		if table.isfrozen(new) then
-			-- We know that this is already removed
-			-- because the table was frozen
-			callback()
-		end
-	end
-	
 	React.pendingQueue:enqueue(function()
 		local dom = assert(new.dom)
-		table.insert(
-			new.events,
-			dom.Destroying:Connect(destroyed)
-		)
+		dom.Destroying:Once(callback)
 	end)
 end
