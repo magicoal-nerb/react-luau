@@ -5,7 +5,10 @@
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
       "$ignoreUnknownInstances": true,
-      "$path": "mini-react-luau"
+      "mini-react-luau": {
+        "$ignoreUnknownInstances": true,
+        "$path": "mini-react-luau"
+      }
     }
   }
 }
