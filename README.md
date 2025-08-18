@@ -1,12 +1,12 @@
 # [react-luau](https://react.dev/)
-*<b>Another luau reimplementation of React</b>*<br>
+*<b>Yet another luau reimplementation of React</b>*<br>
 
 ## Features
 * Typed luau and autocompletion
-* 9 complete hooks
+* Most of the barebones React hooks and has a Roblox renderer built-in :D
 
 ## Documentation
-* This project aims to have parity with the official [React Documentation](https://react.dev/))
+* This project aims to have parity with the official [React Documentation](https://react.dev/)
 * Main difference between React and react-luau is the use of tuples for hooks(this way, we don't create more tables)
 
 ## Examples
@@ -83,6 +83,6 @@ end
 ```
 
 ## Contributing
-Currently, this is just a solo exploration project about UI frameworks in general, so contributing can really help here!!<br>
+Currently, this is just a solo exploration project about UI libraries in general, so contributing can really help here!!<br>
 Moreover, this project isn't really stable yet, so expect alot of random bugs and missing quality of life features.<br>
-I'm currently trying to have close-enough parity with React and have decent performance aswell.
+I'm currently trying to have close-enough parity with React while maintaining decent performance aswell.
