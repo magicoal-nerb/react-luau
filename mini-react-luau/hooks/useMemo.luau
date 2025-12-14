@@ -1,4 +1,8 @@
+--!strict
+
 local React = require("../React")
+
+local arePropsDifferent = require("./arePropsDifferent")
 
 --[[
 	useMemo.lua
@@ -26,15 +30,6 @@ export type Memo<T> = {
 	value: T,
 }
 
-local function arePropsDifferent<T>(propA: T, propB: T): boolean
-	for name, value in propA do
-		if propB[name] ~= value then
-			return true
-		end
-	end
-
-	return false
-end
 
 return function<T>(callback: () -> T, ...: T): T
 	local wipFiber, currentFiber, hook = React.getHookState()

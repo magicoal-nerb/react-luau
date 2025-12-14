@@ -1,4 +1,8 @@
+--!strict
+
 local React = require("../React")
+
+local arePropsDifferent = require("./arePropsDifferent")
 
 --[[
 	useEffect.lua
@@ -34,25 +38,15 @@ local React = require("../React")
 	```
 ]]
 
-local function arePropsDifferent<T>(propA: T, propB: T): boolean
-	for name, value in propA do
-		if propB[name] ~= value then
-			return true
-		end
-	end
-
-	return false
-end
-
 return function<T>(callback: (React.Element) -> T, ...: T)
 	local wipFiber, currentFiber, hook = React.getHookState()
 	if not currentFiber then
-		callback()
+		callback(wipFiber)
 		wipFiber.hooks[hook] = { ... }
 	else
 		local pack = { ... }
 		if arePropsDifferent(currentFiber.hooks[hook], pack) then
-			callback()
+			callback(wipFiber)
 			currentFiber.hooks[hook] = pack
 		end
 	end

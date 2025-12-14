@@ -3,7 +3,6 @@
 local React = require("../React")
 
 --[[
-
 	memo prevents computing a component again if
 	its props are the same. this wraps around an existing
 	component, and returns a modified component

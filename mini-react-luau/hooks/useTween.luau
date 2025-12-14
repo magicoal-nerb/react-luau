@@ -1,8 +1,81 @@
+--!strict
+
 local React = require("../React")
+
+--[[
+	useTween gives a tween object and a builder object
+
+	building
+	```luau
+	useEffect(function()
+		local inPosition = Vector2.new(16 / contentSize.X, 1.0)
+		tweenBuilder
+			:ease(Vector2.one, React.easings.quadOut, FADE_TIME)
+			:delay(LIFETIME - FADE_TIME - 0.05)
+			:ease(inPosition, React.easings.quintOut, FADE_TIME)
+			:finalize()
+		
+		task.wait(LIFETIME)
+		labelRef:get().Text = ' '
+		
+		-- Destroy the object afterwards
+		task.wait(0.15)
+		frameRef:get():Destroy()
+	end)
+	```
+	
+	main example
+	```luau
+	return createElement("Frame", {
+		LayoutOrder = bubbleProps.LayoutOrder,
+		Size = tween(function(vec: Vector2)
+			return UDim2.fromOffset(contentSize.X * vec.X, contentSize.Y * vec.Y)
+		end),
+		
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = opacity,
+		
+		BorderSizePixel = 0,
+		
+		[React.ref] = frameRef,
+	}, {
+		Caret = createElement("ImageLabel", {
+			Image = "rbxasset://textures/ui/InGameChat/Caret.png",
+			ImageTransparency = if bubbleProps.HasCaret
+				then opacity
+				else 1.0,
+			
+			BackgroundTransparency = 1.0,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromScale(0.5, 1),
+			Size = UDim2.fromOffset(9, 6),
+		}),
+		
+		Corner = createElement("UICorner", {
+			CornerRadius = UDim.new(0, 12),
+		}),
+		
+		Text = createElement("TextLabel", {
+			BackgroundTransparency = 1.0,
+			Font = Enum.Font.BuilderSansMedium,
+			
+			Size = UDim2.fromScale(1, 1),
+			Text = bubbleProps.Text,
+			TextScaled = false,
+			
+			TextSize = 20,
+			TextColor3 = Color3.fromRGB(57, 59, 61),
+			TextTransparency = opacity,
+			TextStrokeTransparency = 1,
+			
+			[React.ref] = labelRef,
+		}),
+	})
+	```
+]]
 
 local RunService = game:GetService("RunService")
 
-local Tweens = {}
 local Tween = {}
 Tween.__index = Tween
 
@@ -18,6 +91,7 @@ export type Tween<T, V> = typeof(setmetatable({} :: {
 	
 	keyframes: { Keyframe<T> },
 	value: T,
+	from: T,
 	
 	subscribed: {{
 		inst: Instance,
@@ -25,6 +99,12 @@ export type Tween<T, V> = typeof(setmetatable({} :: {
 		map: (x: T) -> (V)
 	}}
 }, Tween))
+
+local Tweens = {} :: {{
+	duration: number,
+	start: number,
+	map: (number) -> (),
+}}
 
 local function updateTweens(dt: number)
 	local clock = os.clock()
@@ -51,11 +131,13 @@ local function enqueueTween(
 	}
 end
 
-local function lerp<T>(a: T, b: T, t: number): T
-	return a + (b - a)*t
+local function lerp(a: number, b: number, t: number): number
+	-- linear interpolation
+	return a + (b - a) * t
 end
 
 local function linear(x: number): number
+	-- simple easing
 	return x
 end
 
@@ -65,6 +147,8 @@ function Tween.new<T>(initial: T, hook: any)
 		hook = hook,
 		
 		value = initial,
+		from = initial,
+		
 		keyframes = {{
 			time = 0.0,
 			value = initial,
@@ -78,6 +162,7 @@ function Tween.ease<T, V>(
 	to: T, ease: (number) -> number,
 	duration: number
 ): Tween<T, V>
+	-- compose easing
 	self.elapsed += duration
 	table.insert(self.keyframes, {
 		time = self.elapsed,
@@ -86,7 +171,6 @@ function Tween.ease<T, V>(
 	})
 	
 	self.from = to
-	
 	return self
 end
 
@@ -94,6 +178,7 @@ function Tween.delay<T, V>(
 	self: Tween<T, V>,
 	duration: number
 ): Tween<T, V>
+	-- delays in seconds
 	self.elapsed += duration
 	table.insert(self.keyframes, {
 		time = self.elapsed,
@@ -113,7 +198,8 @@ function Tween.finalize<T, V>(self: Tween<T, V>)
 	local previous = self.value
 	local length = #keyframes
 	
-	enqueueTween(self.hook, function(t: number)		
+	enqueueTween(self.hook, function(t: number)	
+		-- do a binary search to get the keyframe
 		local j = length
 		local i = 1
 
@@ -132,25 +218,25 @@ function Tween.finalize<T, V>(self: Tween<T, V>)
 		
 		j = i + 1
 		
+		-- check the keyframes
 		local curr = keyframes[i]
 		local after = keyframes[j]
 		if not after then
 			return
 		end
 		
+		-- do the tween
 		local alpha = math.min(after.easing((t - curr.time) / (after.time - curr.time)), 1.0)
 		local ease = lerp(curr.value, after.value, alpha)
-		
 		for i, tween in self.subscribed do
-			tween.inst[tween.prop] = tween.map(ease) 
+			(tween.inst :: any)[tween.prop] = tween.map(ease) 
 		end
-		
 		self.value = ease
 	end, self.elapsed)
 end
 
 -- Connection
-RunService.Heartbeat:connect(updateTweens)
+RunService.Heartbeat:Connect(updateTweens)
 
 return function<T, V>(initial: T)
 	local wipFiber, currentFiber, hookIndex = React.getHookState()
@@ -166,15 +252,15 @@ return function<T, V>(initial: T)
 	
 	local function map<V>(map: (x: T) -> (V))
 		return function(element: React.Element, prop: string)
-			local inst = element.dom
+			local inst = element.dom :: Instance
 			table.insert(subscribed, {
 				inst = inst,
 				prop = prop,
 				map = map,
-			})
+			});
 			
 			-- Do this to help with initialization
-			inst[prop] = map(tween.value)
+			(inst :: any)[prop] = map(tween.value)
 		end
 	end
 	

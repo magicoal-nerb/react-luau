@@ -32,7 +32,7 @@ type Element = React.Element
 
 return function<T>(context: Context<T>): T
 	local wipFiber, currentFiber = React.getHookState()
-	context:subscribe(wipFiber, function()
+	context:subscribe(wipFiber.hooks, function()
 		-- Do a redraw on context change
 		React.enqueue(wipFiber, currentFiber)
 	end)

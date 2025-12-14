@@ -22,7 +22,9 @@ return {
 	-- components
 	ref = require("@self/components/ref"),
 	memo = require("@self/components/memo"),
+	event = require("@self/components/event"),
 	union = require("@self/components/union"),
+	changed = require("@self/components/changed"),
 	easings = require("@self/components/easings"),
 	createElement = require("@self/components/element"),
 	
