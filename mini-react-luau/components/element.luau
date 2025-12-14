@@ -7,8 +7,8 @@ type Element = React.Element
 
 return function<T>(
 	class: string | Component,
-	props: T,
-	children: { [any]: Element }
+	props: T?,
+	children: { [any]: Element }?
 ): Element
 	local element = {
 		connections = {},

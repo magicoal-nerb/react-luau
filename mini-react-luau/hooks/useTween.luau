@@ -13,7 +13,7 @@ local React = require("../React")
 			:ease(Vector2.one, React.easings.quadOut, FADE_TIME)
 			:delay(LIFETIME - FADE_TIME - 0.05)
 			:ease(inPosition, React.easings.quintOut, FADE_TIME)
-			:finalize()
+			:play()
 		
 		task.wait(LIFETIME)
 		labelRef:get().Text = ' '
@@ -170,7 +170,6 @@ function Tween.ease<T, V>(
 		easing = ease,
 	})
 	
-	self.from = to
 	return self
 end
 
@@ -181,8 +180,8 @@ function Tween.delay<T, V>(
 	-- delays in seconds
 	self.elapsed += duration
 	table.insert(self.keyframes, {
+		value = self.keyframes[#self.keyframes].value,
 		time = self.elapsed,
-		value = self.from,
 		easing = linear,
 	})
 	
@@ -193,10 +192,10 @@ function Tween.cancel<T, V>(self: Tween<T, V>)
 	Tweens[self.hook] = nil
 end
 
-function Tween.finalize<T, V>(self: Tween<T, V>)
+function Tween.play<T, V>(self: Tween<T, V>)
 	local keyframes = self.keyframes	
-	local previous = self.value
 	local length = #keyframes
+	keyframes[1].value = self.value
 	
 	enqueueTween(self.hook, function(t: number)	
 		-- do a binary search to get the keyframe
@@ -233,6 +232,15 @@ function Tween.finalize<T, V>(self: Tween<T, V>)
 		end
 		self.value = ease
 	end, self.elapsed)
+	
+	-- Create empty keyframes
+	self.keyframes = {{
+		time = 0.0,
+		value = self.value,
+		easing = linear,
+	}}
+	
+	self.elapsed = 0.0
 end
 
 -- Connection
