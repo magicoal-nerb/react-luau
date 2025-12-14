@@ -2,8 +2,8 @@
 
 --[[
 	useRef.lua
-	* references are kinda like useState but they dont
-	* redraw the element
+	references are kinda like useState but they dont
+	redraw the element
 	
 	usage:
 	```lua
@@ -20,20 +20,17 @@
 ]]
 
 local React = require("../React")
-type Element = React.Element
-type Ref<T> = React.Ref<T>
+local Ref = require("../util/Ref")
+
+export type Ref<T> = Ref.Ref<T>
 
 return function<T>(initial: T): Ref<T>
-	local id = React:getHookIndex()
-	local new = React.hookFiber :: Element
-	local old = new.previous :: Element
+	local wipFiber, currentFiber, hookIndex = React.getHookState()
 	
-	-- See if we can reuse the reference, otherwise
-	-- we have to create one >_>
-	local value = if old
-		then (old.hooks :: {any})[id]
-		else setmetatable({ data = initial }, React.Ref) :: Ref<T>
+	local value = if currentFiber
+		then currentFiber.hooks[hookIndex]
+		else Ref.new(initial)
 	
-	(new.hooks :: {any})[id] = value
+	wipFiber.hooks[hookIndex] = value
 	return value
 end

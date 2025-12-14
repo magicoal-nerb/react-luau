@@ -1,18 +1,14 @@
 --!strict
 
 local React = require("../React")
-local useRef = require("../hooks/useRef")
-
-local EMPTY = { }
 
 --[[
-	memo.lua
-	* redraws only happen if the props of the memo
-	* change. otherwise, no redraw occurs evar
+
+	memo prevents computing a component again if
+	its props are the same. this wraps around an existing
+	component, and returns a modified component
 	
-	usage:
-	```lua
-	
+	```luau
 	local function component(props, dom)
 		-- Something that takes a while to do
 		local children = {}
@@ -46,19 +42,12 @@ local EMPTY = { }
 			})
 		}
 	end
-	
 	```
 ]]
 
-type Diff<T> = (current: T, previous: T) -> (boolean)
-
-local function arePropsDifferent<T>(
-	current: T,
-	previous: T
-): boolean
-	for name, valueA in current :: any do
-		local valueB = (previous :: any)[name]
-		if valueA ~= valueB then
+local function arePropsDifferent<T>(propA: T, propB: T): boolean
+	for name, value in propA do
+		if propB[name] ~= value then
 			return true
 		end
 	end
@@ -66,30 +55,19 @@ local function arePropsDifferent<T>(
 	return false
 end
 
-return function<T>(
-	component: (props: T, dom: Instance) -> { React.Element },
-	diff: Diff<T>?
-): React.Type
-	-- Note our props!! :P
-	local propDiff: Diff<T> = if diff 
-		then diff 
-		else arePropsDifferent
-
-	return function(props: T, dom: Instance): { React.Element }
-		local currentRef: React.Ref<T?> = useRef(nil)
-		local propPrev = currentRef:get()
-
-		if not propPrev or propDiff(props, propPrev) then
-			-- Then, we need to create the component again
-			currentRef:set(props)
-			return component(props, dom) :: { React.Element }
+return function<T>(component: React.Component): React.Component
+	return function<T>(props: T): React.Element
+		local wipFiber, currentFiber, hook = React.getHookState()
+		
+		if not currentFiber or arePropsDifferent(props, currentFiber.props) then
+			-- If the props are different, recompute
+			-- this component
+			return component(props)
 		else
-			-- Otherwise, we can just reuse the previous
-			-- component
-			local fiber = React.hookFiber
-			assert(fiber.previous)
-
-			return fiber.previous.children
+			-- If the props are the same, just return
+			-- back the current fiber's children,
+			-- and it will skip the comparison
+			return currentFiber.children[1]
 		end
 	end
 end

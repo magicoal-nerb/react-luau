@@ -1,16 +1,15 @@
---!strict
+local React = require("../React")
 
 --[[
-	useLayoutEffect.lua
-	* Calls the function every time the dependencies change
-	* Use this for logic before the DOM loads
+	useEffect.lua
+	Calls the function every time the dependencies change
+	Use this when depending on UI refs
 	
-	usage:
-	```lua
+	```luau
 	-- the function gets called when the element
 	-- gets created
 	return function()
-		useLayoutEffect(function()
+		useEffect(function()
 			print("Hi guys i got mounted!! :D")
 		end)
 		
@@ -19,12 +18,12 @@
 	end
 	```
 	
-	```lua
+	```luau
 	-- the function gets called when the state
 	-- changes
 	return function()
 		local counter, setCounter = useState(0)
-		useLayoutEffect(function()
+		useEffect(function()
 			-- This gets called if counter is different
 			print(`Counter value is: {counter}`)
 		end, counter)
@@ -35,35 +34,26 @@
 	```
 ]]
 
-local React = require("../React")
-
-type Element = React.Element
-
-return function(
-	callback: () -> (),
-	...
-)
-	if not select(1, ...) then
-		-- Basically our equivalent of mount
-		local new = React.hookFiber :: Element
-		local old = new.previous :: Element
-		if not old then
-			callback()
+local function arePropsDifferent<T>(propA: T, propB: T): boolean
+	for name, value in propA do
+		if propB[name] ~= value then
+			return true
 		end
-	else
-		-- Check dependencies
-		local id = React:getHookIndex()
-		local new = React.hookFiber :: Element
-		local old = new.previous :: Element
+	end
 
-		assert(new.hooks)
-		if not old then
-			-- Use the callback
-			new.hooks[id] = React:getHookDependencies(...)
+	return false
+end
+
+return function<T>(callback: (React.Element) -> T, ...: T)
+	local wipFiber, currentFiber, hook = React.getHookState()
+	if not currentFiber then
+		callback()
+		wipFiber.hooks[hook] = { ... }
+	else
+		local pack = { ... }
+		if arePropsDifferent(currentFiber.hooks[hook], pack) then
 			callback()
-		elseif React:didDependenciesChange(new.hooks[id], ...) then
-			-- Callback because deps changed
-			callback()
+			currentFiber.hooks[hook] = pack
 		end
 	end
 end

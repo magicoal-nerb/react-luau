@@ -1,12 +1,11 @@
---!strict
+local React = require("../React")
 
 --[[
 	useEffect.lua
-	* Calls the function every time the dependencies change
-	* Use this when depending on UI refs
+	Calls the function every time the dependencies change
+	Use this when depending on UI refs
 	
-	usage:
-	```lua
+	```luau
 	-- the function gets called when the element
 	-- gets created
 	return function()
@@ -19,7 +18,7 @@
 	end
 	```
 	
-	```lua
+	```luau
 	-- the function gets called when the state
 	-- changes
 	return function()
@@ -35,35 +34,26 @@
 	```
 ]]
 
-local React = require("../React")
-
-type Element = React.Element
-
-return function(
-	callback: () -> (),
-	...
-)
-	if not select(1, ...) then
-		-- Basically our equivalent of mount
-		local new = React.hookFiber :: Element
-		local old = new.previous :: Element
-		if not old then
-			React.pendingQueue:enqueue(callback)
+local function arePropsDifferent<T>(propA: T, propB: T): boolean
+	for name, value in propA do
+		if propB[name] ~= value then
+			return true
 		end
-	else
-		-- Check dependencies
-		local id = React:getHookIndex()
-		local new = React.hookFiber :: Element
-		local old = new.previous :: Element
+	end
 
-		assert(new.hooks)
-		if not old then
-			-- Use the callback
-			new.hooks[id] = React:getHookDependencies(...)
-			React.pendingQueue:enqueue(callback)
-		elseif React:didDependenciesChange(new.hooks[id], ...) then
-			-- Callback because deps changed
-			React.pendingQueue:enqueue(callback)
+	return false
+end
+
+return function<T>(callback: (React.Element) -> T, ...: T)
+	local wipFiber, currentFiber, hook = React.getHookState()
+	if not currentFiber then
+		React.createCallback(callback)
+		wipFiber.hooks[hook] = { ... }
+	else
+		local pack = { ... }
+		if arePropsDifferent(currentFiber.hooks[hook], pack) then
+			React.createCallback(callback)
+			currentFiber.hooks[hook] = pack
 		end
 	end
 end

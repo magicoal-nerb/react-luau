@@ -2,12 +2,11 @@
 
 --[[
 	useReducer.lua
-	* Similar to state, but for functions that change
-	* the current state. Assumes that you store state 
-	* as a constant beforehand. Please do that :3
+	Similar to state, but for functions that change
+	the current state. Assumes that you store state 
+	as a constant beforehand. Please do that :3
 	
-	usage:
-	```lua
+	```luau
 	-- Make sure your initial state is an upvalue here!!
 	-- We don't you creating even more tables when we redraw
 	-- stuff!!
@@ -67,38 +66,32 @@ return function<T, V>(
 	initial,
 	shouldDeepClone: boolean?
 ): (T, (x: V) -> ())
-	local id = React:getHookIndex()
-	local new = React.hookFiber :: Element
-	local old = new.previous :: Element
-
-	-- Get the hooks
-	assert(new.hooks)
-
-	if old then
-		-- Use that state instead
-		local hook: Hook<T, V> = (old.hooks :: {any})[id]
+	local wipFiber, currentFiber, hookIndex = React.getHookState()
+	if currentFiber then
+		-- Use the previous stuff instead
+		local hook: Hook<T, V> = currentFiber.hooks[hookIndex]
 		return hook.state, hook.dispatch
-	else
-		-- Create our new state instead
-		local state = if shouldDeepClone
-			then deepClone(initial)
-			else table.clone(initial)
-
-		local function dispatch(action: V)
-			-- Queue up this fiber to be rebuilt
-			local newState = reducer(state, action)
-			if newState ~= nil then
-				-- New state, so enqueue
-				new.hooks[id].state = newState
-				React:enqueueElement(new)
-			end
-		end
-		
-		new.hooks[id] = {
-			state = state,
-			dispatch = dispatch,
-		} :: Hook<T, V>
-		
-		return state, dispatch
 	end
+	
+	-- Create our new state instead
+	local state = if shouldDeepClone
+		then deepClone(initial)
+		else table.clone(initial)
+
+	local function dispatch(action: V)
+		-- Queue up this fiber to be rebuilt
+		local newState = reducer(state, action)
+		if newState ~= nil then
+			-- New state, so enqueue
+			wipFiber.hooks[hookIndex] = newState
+			React.enqueue(wipFiber, currentFiber)
+		end
+	end
+	
+	wipFiber.hooks[hookIndex] = {
+		state = state,
+		dispatch = dispatch,
+	} :: Hook<T, V>
+	
+	return state, dispatch
 end

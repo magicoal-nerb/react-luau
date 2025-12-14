@@ -1,14 +1,13 @@
---!strict
+local React = require("../React")
 
 --[[
 	useCallback.lua
-	* this saves us from having to precalculate a buncha stuff
-	* It checks the dependencies for us :3
+	this saves us from having to precalculate a buncha stuff
+	It checks the dependencies for us :3
 	
-	usage:
-	```lua
+	```luau
 	return function(props)
-		local result = useCallback(function()
+		useCallback(function()
 			-- this function changes when props.something
 			-- changes
 			return props.something * 10
@@ -20,39 +19,26 @@
 	```
 ]]
 
-local React = require("../React")
-
-type Element = React.Element
-type MemoData<T> = {
-	dependencies: any,
-	cache: T,
-}
-
-return function<T>(
-	calculate: T,
-	...: any
-): T
-	local id = React:getHookIndex()
-	local new = React.hookFiber :: Element
-	local old = new.previous :: Element
-
-	if old then
-		-- Compare the previous state
-		-- to our current state
-		local memo = (old :: any).hooks[id] :: MemoData<T>		
-		if React:didDependenciesChange(memo.dependencies, ...) then
-			return calculate
+local function arePropsDifferent<T>(propA: T, propB: T): boolean
+	for name, value in propA do
+		if propB[name] ~= value then
+			return true
 		end
-		
-		return memo.cache
+	end
+
+	return false
+end
+
+return function<T>(callback: () -> T, ...: T)
+	local wipFiber, currentFiber, hook = React.getHookState()
+	if not currentFiber then
+		callback()
+		wipFiber.hooks[hook] = { ... }
 	else
-		-- Initialize the value		
-		local hooks = assert(new.hooks)
-		hooks[id] = {
-			cache = calculate,
-			dependencies = React:getHookDependencies(...),
-		}
-		
-		return calculate
+		local pack = { ... }
+		if arePropsDifferent(currentFiber.hooks[hook], pack) then
+			callback()
+			currentFiber.hooks[hook] = pack
+		end
 	end
 end

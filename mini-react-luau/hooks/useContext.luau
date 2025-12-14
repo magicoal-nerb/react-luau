@@ -25,15 +25,16 @@
 ]]
 
 local React = require("../React")
+local Context = require("../util/Context")
 
-type Context<T> = React.Context<T>
+type Context<T> = Context.Context<T>
 type Element = React.Element
 
 return function<T>(context: Context<T>): T
-	local fiber = React.hookFiber
-	context:subscribe(fiber, function()
+	local wipFiber, currentFiber = React.getHookState()
+	context:subscribe(wipFiber, function()
 		-- Do a redraw on context change
-		React:enqueueElement(fiber)
+		React.enqueue(wipFiber, currentFiber)
 	end)
 
 	return context:get()
