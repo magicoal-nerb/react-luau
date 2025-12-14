@@ -104,8 +104,9 @@ end
 
 local function fiberUpdate(wip: Element, current: Element)
 	local diff = getPropDiff(wip.props, current.props)
-	wip.dom = current.dom
+	wip.connections = current.connections
 	wip.hooks = current.hooks
+	wip.dom = current.dom
 	
 	if typeof(wip.class) == "function" then
 		-- Set the component's children
@@ -120,7 +121,7 @@ local function fiberUpdate(wip: Element, current: Element)
 			-- Do not update
 			return
 		end
-	elseif next(diff, nil) then
+	else
 		FiberRenderer.updateHostNode(wip, diff)
 	end
 	
@@ -157,6 +158,18 @@ local function reconcile(wip: Element?, current: Element?)
 	end
 end
 
+function React.unmount(element: Element)
+	fiberEnqueue(nil, element)
+end
+
+function React.update(element: Element)
+	fiberEnqueue({
+		class = element.class,
+		props = element.props,
+		children = {},
+	} :: Element, element)
+end
+
 function React.getHookState(): (Element, Element, number)
 	-- Gives back the current wip root and the number
 	-- of hooks it has
@@ -180,7 +193,7 @@ function React.setRenderer(renderer: Renderer)
 	FiberRenderer = renderer
 end
 
-function React.mount(element: Element, parent: Instance)
+function React.mount(element: Element, parent: Instance): Element
 	-- Create a psuedo object for our
 	-- element
 	element.parent = {
@@ -193,6 +206,7 @@ function React.mount(element: Element, parent: Instance)
 		
 	-- Then, we render!
 	reconcile(element, nil)
+	return element
 end
 
 function React.workLoop(budgetTime: number)

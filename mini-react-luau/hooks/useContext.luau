@@ -34,7 +34,7 @@ return function<T>(context: Context<T>): T
 	local wipFiber, currentFiber = React.getHookState()
 	context:subscribe(wipFiber.hooks, function()
 		-- Do a redraw on context change
-		React.enqueue(wipFiber, currentFiber)
+		React.update(wipFiber)
 	end)
 
 	return context:get()

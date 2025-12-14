@@ -27,9 +27,9 @@ return function<T>(initial: number): (T, Callback<T>)
 		wipFiber.hooks[hook] = initial
 	end
 	
-	local function callback(to: T)
+	local function callback(to: T)		
 		wipFiber.hooks[hook] = to
-		React.enqueue(wipFiber, currentFiber)
+		React.update(wipFiber)
 	end
 	
 	return wipFiber.hooks[hook], callback

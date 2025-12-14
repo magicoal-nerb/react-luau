@@ -9,6 +9,7 @@ function RobloxRenderer.updateHostNode(node: React.Element, diff: {[string]: any
 		connection:Disconnect()
 	end
 	
+	table.clear(node.connections)
 	for prop, value in diff do
 		local t = typeof(value)
 		if typeof(prop) == "function" then
@@ -33,6 +34,7 @@ end
 function RobloxRenderer.mountHostNode(node: React.Element)
 	-- Just render it for now
 	local inst = Instance.new(node.class)
+	print("Constructed!")
 	node.dom = inst
 	
 	for prop, value in node.props do

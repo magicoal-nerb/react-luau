@@ -84,7 +84,7 @@ return function<T, V>(
 		if newState ~= nil then
 			-- New state, so enqueue
 			wipFiber.hooks[hookIndex] = newState
-			React.enqueue(wipFiber, currentFiber)
+			React.update(wipFiber)
 		end
 	end
 	
