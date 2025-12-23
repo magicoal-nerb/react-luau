@@ -1,14 +1,6 @@
 {
-  "name": "project",
+  "name": "mini-react-luau",
   "tree": {
-    "$className": "DataModel",
-    "ReplicatedStorage": {
-      "$className": "ReplicatedStorage",
-      "$ignoreUnknownInstances": true,
-      "mini-react-luau": {
-        "$ignoreUnknownInstances": true,
-        "$path": "mini-react-luau"
-      }
-    }
+    "$path": "mini-react-luau"
   }
 }
