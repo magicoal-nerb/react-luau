@@ -1,7 +1,9 @@
 [package]
 name = "magicoal-nerb/mini-react-luau"
 version = "0.1.0"
+description = "compact reimplementation of react. only function components"
 registry = "https://github.com/UpliftGames/wally-index"
+license = "MIT"
 realm = "shared"
 
 [dependencies]
