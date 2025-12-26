@@ -21,6 +21,13 @@ return function<T>(
 	
 	if children then
 		for name, child in children do
+			if child == false then
+				-- Falsy node, disregard
+				-- it in the child table
+				children[name] = nil
+				continue
+			end
+
 			child.parent = element :: Element
 		end
 	end

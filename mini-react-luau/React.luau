@@ -210,7 +210,7 @@ function React.mount(element: Element, parent: Instance): Element
 end
 
 function React.workLoop(budgetTime: number)
-	local budget = os.clock() + (budgetTime * 1e-4)
+	local budget = os.clock() + (budgetTime * 1e-3)
 
 	-- Please do work
 	while not FiberQueue:empty() and os.clock() < budget do

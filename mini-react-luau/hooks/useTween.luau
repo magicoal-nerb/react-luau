@@ -2,6 +2,8 @@
 
 local React = require("../React")
 
+type Lambda = () -> ()
+
 --[[
 	useTween gives a tween object and a builder object
 
@@ -92,6 +94,8 @@ export type Tween<T, V> = typeof(setmetatable({} :: {
 	keyframes: { Keyframe<T> },
 	value: T,
 	from: T,
+
+	listeners: { [Lambda]: boolean },
 	
 	subscribed: {{
 		inst: Instance,
@@ -113,8 +117,13 @@ local function updateTweens(dt: number)
 		local alpha = math.min(clock - tween.start, duration)
 		tween.map(alpha)
 
-		if alpha >= duration then
-			Tweens[hook] = nil
+		if alpha < duration then
+			continue
+		end
+
+		Tweens[hook] = nil
+		for listener in tween.listeners do
+			listener()
 		end
 	end
 end
@@ -148,6 +157,7 @@ function Tween.new<T>(initial: T, hook: any)
 		
 		value = initial,
 		from = initial,
+		listeners = {},
 		
 		keyframes = {{
 			time = 0.0,
@@ -241,6 +251,13 @@ function Tween.play<T, V>(self: Tween<T, V>)
 	}}
 	
 	self.elapsed = 0.0
+end
+
+function Tween.completed<T, V>(self: Tween<T, V>, func: Lambda): Lambda
+	self.listeners[func] = true
+	return function()
+		self.listeners[func] = nil
+	end
 end
 
 -- Connection
