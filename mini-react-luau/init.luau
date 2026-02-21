@@ -7,12 +7,15 @@
 -- magical_noob
 
 local React = require("@self/React")
+
+local Context = require("@self/util/Context")
 local Ref = require("@self/util/Ref")
 
 export type Component = React.Component
 export type Renderer = React.Renderer
 export type Element = React.Element
 
+export type Context<T> = Context.Context<T>
 export type Ref<T> = Ref.Ref<T>
 
 return {
