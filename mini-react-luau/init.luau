@@ -20,6 +20,7 @@ export type Ref<T> = Ref.Ref<T>
 
 return {
 	RobloxRenderer = require("@self/RobloxRenderer"),
+	Context = require("@self/util/Context"),
 	React = require("@self/React"),
 	
 	-- components
