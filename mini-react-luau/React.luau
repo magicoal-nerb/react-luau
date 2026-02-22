@@ -177,10 +177,8 @@ end
 
 function React.update(element: Element)
 	if not element.dom then
-		print("updated an invalid element")
 		return
 	elseif FiberPending[element] then
-		print("hit pending")
 		return
 	end
 	
