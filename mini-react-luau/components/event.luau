@@ -4,7 +4,7 @@ local React = require("../React")
 
 export type Connection<T...> = (T...) -> ()
 
-local function event<T...>(_, name: string): (React.Element, Connection<T...>) -> ()
+local function event<T...>(_, name: string): any
 	return function(
 		element: React.Element,
 		conn: (T...) -> ()

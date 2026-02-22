@@ -45,6 +45,10 @@ local React = require("../React")
 ]]
 
 local function arePropsDifferent<T>(propA: T, propB: T): boolean
+	if typeof(propA) ~= "table" then
+		return propA ~= propB
+	end
+	
 	for name, value in propA do
 		if propB[name] ~= value then
 			return true

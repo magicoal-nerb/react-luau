@@ -2,8 +2,6 @@
 
 local React = require("../React")
 
-type Lambda = () -> ()
-
 --[[
 	useTween gives a tween object and a builder object
 
@@ -94,8 +92,6 @@ export type Tween<T, V> = typeof(setmetatable({} :: {
 	keyframes: { Keyframe<T> },
 	value: T,
 	from: T,
-
-	listeners: { [Lambda]: boolean },
 	
 	subscribed: {{
 		inst: Instance,
@@ -117,13 +113,9 @@ local function updateTweens(dt: number)
 		local alpha = math.min(clock - tween.start, duration)
 		tween.map(alpha)
 
-		if alpha < duration then
-			continue
-		end
-
-		Tweens[hook] = nil
-		for listener in tween.listeners do
-			listener()
+		if alpha >= duration then
+			tween.map(duration)
+			Tweens[hook] = nil
 		end
 	end
 end
@@ -157,7 +149,6 @@ function Tween.new<T>(initial: T, hook: any)
 		
 		value = initial,
 		from = initial,
-		listeners = {},
 		
 		keyframes = {{
 			time = 0.0,
@@ -209,37 +200,36 @@ function Tween.play<T, V>(self: Tween<T, V>)
 	
 	enqueueTween(self.hook, function(t: number)	
 		-- do a binary search to get the keyframe
-		local j = length
-		local i = 1
-
-		while i < j do
-			local center = (i + j) // 2
-			if keyframes[center].time > t then
-				j = center - 1
-			else
-				i = center + 1
+		local left = 1
+		local span = length
+		
+		while 1 < span do
+			span = bit32.rshift(span + 1, 1)
+			
+			local cursor = left + span
+			if length < cursor then
+				continue
+			elseif keyframes[cursor].time < t then
+				left = cursor
 			end
 		end
 		
-		while keyframes[i].time > t do
-			i -= 1
-		end
-		
-		j = i + 1
-		
 		-- check the keyframes
-		local curr = keyframes[i]
-		local after = keyframes[j]
+		local after = keyframes[math.min(left + 1, length)]
+		local curr = keyframes[left]
+		
 		if not after then
 			return
 		end
 		
 		-- do the tween
+		-- we will go back to this once they add type constraints
 		local alpha = math.min(after.easing((t - curr.time) / (after.time - curr.time)), 1.0)
-		local ease = lerp(curr.value, after.value, alpha)
+		local ease = lerp(curr.value :: any, after.value :: any, alpha)
 		for i, tween in self.subscribed do
 			(tween.inst :: any)[tween.prop] = tween.map(ease) 
 		end
+		
 		self.value = ease
 	end, self.elapsed)
 	
@@ -251,13 +241,6 @@ function Tween.play<T, V>(self: Tween<T, V>)
 	}}
 	
 	self.elapsed = 0.0
-end
-
-function Tween.completed<T, V>(self: Tween<T, V>, func: Lambda): Lambda
-	self.listeners[func] = true
-	return function()
-		self.listeners[func] = nil
-	end
 end
 
 -- Connection
@@ -278,6 +261,10 @@ return function<T, V>(initial: T)
 	local function map<V>(map: (x: T) -> (V))
 		return function(element: React.Element, prop: string)
 			local inst = element.dom :: Instance
+			if not inst then
+				return
+			end
+			
 			table.insert(subscribed, {
 				inst = inst,
 				prop = prop,

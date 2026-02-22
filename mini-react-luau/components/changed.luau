@@ -11,7 +11,9 @@ local function changed<T...>(_, name: string): (React.Element, Connection<T...>)
 	)
 		local connection = (element.dom :: any)
 			:GetPropertyChangedSignal(name)
-			:Connect(conn)
+			:Connect(function()
+				conn((element.dom :: any)[name])
+			end)
 		
 		table.insert(element.connections, connection :: RBXScriptConnection)
 	end

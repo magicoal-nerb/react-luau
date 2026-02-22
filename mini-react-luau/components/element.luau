@@ -14,11 +14,11 @@ return function<T>(
 		connections = {},
 		class = class,
 		hooks = {},
-		
+
 		props = props or {},
 		children = children or {},
 	} :: Element
-	
+
 	if children then
 		for name, child in children do
 			if child == false then
@@ -31,6 +31,6 @@ return function<T>(
 			child.parent = element :: Element
 		end
 	end
-	
+
 	return element
 end

@@ -32,8 +32,10 @@ type Element = React.Element
 
 return function<T>(context: Context<T>): T
 	local wipFiber, currentFiber = React.getHookState()
-	context:subscribe(wipFiber.hooks, function()
+	local myHooks = wipFiber.hooks
+	context:subscribe(myHooks, function()
 		-- Do a redraw on context change
+		context:unsubscribe(myHooks)
 		React.update(wipFiber)
 	end)
 

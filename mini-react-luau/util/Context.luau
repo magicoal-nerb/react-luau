@@ -8,20 +8,15 @@ local Context = {}
 Context.__index = Context
 
 export type Context<T> = typeof(setmetatable({} :: {
-	subscribed: { [any]: () -> () },
+	subscribed: { [any]: (T) -> () },
 	data: T,
 }, Context))
 
 function Context.set<T>(self: Context<T>, to: T)
 	-- Sets the value and goes through our callbacks!
-	-- We know that these elements will resubscribe, so
-	-- we can clear the array beforehand
-	local subscribed = self.subscribed
-	self.subscribed = {} -- :c
 	self.data = to
-
-	for i, callback in subscribed do
-		callback()
+	for i, callback in self.subscribed do
+		callback(to)
 	end
 end
 
@@ -42,10 +37,17 @@ end
 function Context.subscribe<T>(
 	self: Context<T>,
 	key: any,
-	callback: () -> ()
+	callback: (T) -> ()
 )
 	-- Add the callback
 	self.subscribed[key] = callback
+end
+
+function Context.new<T>(initial: T): Context<T>
+	return setmetatable({
+		subscribed = {},
+		data = initial,
+	}, Context)
 end
 
 return Context

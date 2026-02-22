@@ -32,6 +32,7 @@ local FiberCallback = Queue.new() :: Queue.Queue<() -> ()>
 local FiberQueue = Queue.new() :: Queue.Queue<FiberPair>
 local FiberRenderer: Renderer
 
+local FiberPending = {} :: { [Element]: boolean }
 local FiberCurrent: Element?
 local FiberHooks = 0
 local FiberWip: Element?
@@ -39,6 +40,12 @@ local FiberWip: Element?
 local React = {}
 
 local function getPropDiff(wip: Proplist, current: Proplist): Proplist
+	if typeof(wip) ~= "table" then
+		return if wip ~= current
+			then { something = true }
+			else {}
+	end
+	
 	local diff = {}
 	for name, value in wip do
 		-- This value differed! Note it
@@ -65,7 +72,7 @@ end
 local function fiberDestroy(current: Element)
 	if typeof(current.class) ~= "function" then
 		-- Create the basic element
-		current.dom = FiberRenderer.unmountHostNode(current)
+		FiberRenderer.unmountHostNode(current)
 		return
 	end
 
@@ -103,10 +110,16 @@ local function fiberCreate(wip: Element)
 end
 
 local function fiberUpdate(wip: Element, current: Element)
+	if not current.dom then
+		-- this was already invalidated
+		return
+	end
+	
 	local diff = getPropDiff(wip.props, current.props)
 	wip.connections = current.connections
 	wip.hooks = current.hooks
 	wip.dom = current.dom
+	current.dom = nil
 	
 	if typeof(wip.class) == "function" then
 		-- Set the component's children
@@ -114,7 +127,7 @@ local function fiberUpdate(wip: Element, current: Element)
 		FiberHooks = 0
 		FiberWip = wip
 		
-		wip.children[1] = wip.class(wip.props, current)
+		wip.children[1] = wip.class(wip.props)
 		wip.cleanup = current.cleanup
 		
 		if wip.children[1] == current.children[1] then
@@ -163,6 +176,15 @@ function React.unmount(element: Element)
 end
 
 function React.update(element: Element)
+	if not element.dom then
+		print("updated an invalid element")
+		return
+	elseif FiberPending[element] then
+		print("hit pending")
+		return
+	end
+	
+	FiberPending[element] = true
 	fiberEnqueue({
 		class = element.class,
 		props = element.props,
@@ -210,7 +232,7 @@ function React.mount(element: Element, parent: Instance): Element
 end
 
 function React.workLoop(budgetTime: number)
-	local budget = os.clock() + (budgetTime * 1e-3)
+	local budget = os.clock() + (budgetTime * 1e-4)
 
 	-- Please do work
 	while not FiberQueue:empty() and os.clock() < budget do
@@ -218,6 +240,7 @@ function React.workLoop(budgetTime: number)
 		reconcile(workPair.left, workPair.right)
 	end
 	
+	table.clear(FiberPending)
 	if not FiberQueue:empty() then
 		-- Cannot do anything
 		return

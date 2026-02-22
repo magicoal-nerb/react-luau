@@ -20,7 +20,7 @@ export type Callback<T> = (set: T) -> ()
 	```
 ]]
 
-return function<T>(initial: number): (T, Callback<T>)
+return function<T>(initial: T): (T, Callback<T>)
 	local wipFiber, currentFiber, hook = React.getHookState()
 	
 	if not currentFiber then
